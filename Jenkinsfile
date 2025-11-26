@@ -49,14 +49,21 @@ pipeline {
                     
                     // 1. Build the Docker Image
                     echo "Building Docker image: ${fullImageName}"
-                    def builtImage = docker.build(fullImageName, '.')
+                    sh "docker build -t ${fullImageName} ."
                     
-                    // 2. Push the Docker Image using the credential ID defined in the environment
-                    echo "Attempting Docker push to ${DOCKER_REGISTRY} using credential ID: ${DOCKER_CREDENTIAL_ID}"
+                    // 2. Authenticate and Push using the highly reliable withCredentials block
+                    echo "Authenticating and pushing to Docker Hub using credential ID: ${DOCKER_CREDENTIAL_ID}"
                     
-                    // CRITICAL FIX: Ensure the DOCKER_CREDENTIAL_ID variable is correctly interpolated and used.
-                    docker.withRegistry("https://${DOCKER_REGISTRY}", DOCKER_CREDENTIAL_ID) {
-                        builtImage.push() 
+                    // CRITICAL FIX: Use withCredentials to inject username/password for explicit docker login
+                    withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIAL_ID, passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USER')]) {
+                        // Explicitly log in using the injected variables
+                        sh "echo \$DOCKER_PASSWORD | docker login -u \$DOCKER_USER --password-stdin ${DOCKER_REGISTRY}"
+                        
+                        // Explicitly push the built image
+                        sh "docker push ${fullImageName}"
+                        
+                        // Logout is optional but good practice
+                        sh "docker logout ${DOCKER_REGISTRY}"
                     }
                     echo "Docker push command executed successfully for: ${fullImageName}"
                 }
