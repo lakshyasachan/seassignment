@@ -1,11 +1,8 @@
-package com.example;
-
 import java.util.Scanner;
 
 /**
  * Simple Calculator Command Line Interface (CLI) Application.
  * This application takes two numbers and an operator, and returns the result.
- * It is structured to be easily built and tested by Jenkins.
  */
 public class CalculatorApp {
 
