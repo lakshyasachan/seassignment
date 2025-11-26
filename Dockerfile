@@ -1,51 +1,42 @@
-Use a lightweight JDK image for building the Java application (Build Stage)
+--- Build Stage: Compile the Java code ---
 
-FROM maven:3.8.7-eclipse-temurin-17 AS build
+Use a JDK image that includes the Java Compiler (javac)
+
+FROM eclipse-temurin:17-jdk-alpine AS build
 
 Set the working directory inside the container
 
 WORKDIR /app
 
-Copy the pom.xml file first to download dependencies (improves cache performance)
+Copy the Java source files (App and Test) to the container's working directory
 
-COPY pom.xml .
+COPY CalculatorApp.java .
+COPY CalculatorTest.java .
 
-Download dependencies
+Compile both Java files
 
-RUN mvn dependency:go-offline
+This generates CalculatorApp.class and CalculatorTest.class
 
-Copy the rest of the application code
+RUN javac CalculatorApp.java CalculatorTest.java
 
-COPY src ./src
-
-Build the final JAR file
-
-The application JAR will be located in the 'target' directory
-
-RUN mvn package -DskipTests
-
---- Second Stage: Create the final, smaller runtime image ---
+--- Runtime Stage: Create the final, smaller runtime image ---
 
 Use a lightweight JRE (Java Runtime Environment) for the final image
 
 FROM eclipse-temurin:17-jre-alpine
 
-Set the working directory
+Set the working directory for the application
 
 WORKDIR /usr/app
 
-Copy the built JAR file from the 'build' stage
+Copy the compiled class files from the 'build' stage
 
-The name of the JAR file will depend on the pom.xml artifactId (usually target/*.jar)
+We only need the application class for runtime
 
-Assuming the JAR is named 'calculator-cli-app.jar' for simplicity.
-
-Check your pom.xml for the exact name if this fails, or use '*.jar'
-
-COPY --from=build /app/target/*.jar calculator-cli-app.jar
+COPY --from=build /app/CalculatorApp.class .
 
 Define the entry point for the application
 
-This is what runs when 'docker run' is executed
+This command runs the compiled CalculatorApp class file
 
-ENTRYPOINT ["java", "-jar", "calculator-cli-app.jar"]
+ENTRYPOINT ["java", "CalculatorApp"]
