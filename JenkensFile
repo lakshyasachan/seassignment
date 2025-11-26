@@ -5,16 +5,13 @@ pipeline {
     environment {
         DOCKER_REGISTRY = 'docker.io'
         // ===============================================
-        // *** CRITICAL: REPLACE THIS WITH YOUR DOCKER HUB USERNAME ***
-        DOCKER_HUB_USERNAME = '<YOUR_DOCKERHUB_USERNAME>' 
+        DOCKER_HUB_USERNAME = 'anonymone' 
         // ===============================================
         
         IMAGE_NAME = "calculator-cli-app" 
-        IMAGE_TAG = "0" // Your Roll Number for identification
+        IMAGE_TAG = "0" 
         
-        // IDs of the Credentials set in Jenkins (must match Phase 2 names)
         DOCKER_CREDENTIAL_ID = 'dockerhub-creds'
-        // GitHub credentials are handled by the SCM configuration
     }
 
     stages {
@@ -41,7 +38,6 @@ pipeline {
         }
         
         stage('Create & Push Docker Image') {
-            // This stage only executes if the previous 'Test Code' stage was successful
             when {
                 expression { currentBuild.result == 'SUCCESS' }
             }
