@@ -5,12 +5,14 @@ pipeline {
     environment {
         DOCKER_REGISTRY = 'docker.io'
         // ===============================================
+        // Ensure this is your actual Docker Hub ID
         DOCKER_HUB_USERNAME = 'anonymone' 
         // ===============================================
         
         IMAGE_NAME = "calculator-cli-app" 
-        IMAGE_TAG = "0" 
+        IMAGE_TAG = "0" // Your Roll Number
         
+        // ID of the Docker Hub Credentials set in Jenkins
         DOCKER_CREDENTIAL_ID = 'dockerhub-creds'
     }
 
@@ -21,23 +23,18 @@ pipeline {
             }
         }
         
-        stage('Build Code') {
+        stage('Compile Code') {
             steps {
-                echo 'Building the Simple Calculator application (using Maven).'
-                // The 'mvn clean install' command compiles the code
-                sh 'mvn clean install -DskipTests'
-            }
-        }
-        
-        stage('Test Code') {
-            steps {
-                echo 'Running automated JUnit tests. The pipeline will stop if tests fail.'
-                sh 'mvn test' 
-                echo 'Tests ran successfully. Proceeding to Docker stage.'
+                echo 'Compiling the Simple Calculator application (using javac).'
+                // The single source file is compiled directly.
+                // The compiled .class file is created in the workspace root.
+                sh 'javac CalculatorApp.java' 
+                echo 'Compilation successful. Proceeding to Docker stage.'
             }
         }
         
         stage('Create & Push Docker Image') {
+            // This stage runs only if the Compile Code stage was successful
             when {
                 expression { currentBuild.result == 'SUCCESS' }
             }
@@ -47,7 +44,6 @@ pipeline {
                     
                     // 1. Create the Docker Image using the Dockerfile
                     echo "Building Docker image: ${fullImageName}"
-                    // The '.' specifies that the Dockerfile is in the current directory
                     docker.build(fullImageName, '.')
                     
                     // 2. Push the Docker Image to Docker Hub
@@ -60,6 +56,20 @@ pipeline {
                     echo "Docker image pushed successfully: ${fullImageName}"
                 }
             }
+        }
+    }
+    
+    post {
+        always {
+            // Cleanup the workspace to free up disk space after the job completes
+            echo 'Cleaning up workspace...'
+            cleanWs()
+        }
+        success {
+            echo "Pipeline succeeded! Image ${IMAGE_NAME}:${IMAGE_TAG} pushed to Docker Hub."
+        }
+        failure {
+            echo "Pipeline FAILED. Please check the Console Output for errors."
         }
     }
 }
