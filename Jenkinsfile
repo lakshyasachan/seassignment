@@ -4,8 +4,10 @@ pipeline {
     
     // Environment variables for Docker build/push
     environment {
-        // Removed DOCKER_PATH and will rely on the system's execution PATH.
-        // This is the simplest approach when the binary is installed globally.
+        // --- FINAL CRITICAL FIX: Confirmed Docker Path via 'which docker' ---
+        // Setting the path to the confirmed location: /usr/bin/docker.
+        DOCKER_PATH = '/usr/bin/docker' 
+        // ------------------------------------------------------------------
         
         DOCKER_REGISTRY = 'docker.io'
         // Using the image name from the original log: anonymone/imt2023612
@@ -19,8 +21,6 @@ pipeline {
         stage('Pull Code') {
             steps {
                 echo 'Pulling code from GitHub via SCM configuration.'
-                // Assuming standard SCM configuration handles the checkout, 
-                // but adding a simple echo for completeness as per original log.
             }
         }
         
@@ -48,22 +48,22 @@ pipeline {
                     def fullImageName = "${DOCKER_HUB_USERNAME}:${IMAGE_TAG}"
 
                     echo "Building Docker image: ${fullImageName}"
-                    // 1. Build the Docker Image using the standard 'docker' command (relying on PATH)
-                    sh "docker build -t ${fullImageName} ."
+                    // 1. Build the Docker Image using the fixed DOCKER_PATH
+                    sh "\"${DOCKER_PATH}\" build -t ${fullImageName} ."
                     
                     echo "Authenticating and pushing to Docker Hub securely using credential ID: ${DOCKER_CREDENTIAL_ID}"
                     
                     // 2. Authenticate and Push using secure withCredentials block
                     withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIAL_ID, passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USER')]) {
                         
-                        // Explicitly log in using the standard 'docker' command
-                        sh "echo \$DOCKER_PASSWORD | docker login -u \$DOCKER_USER --password-stdin ${DOCKER_REGISTRY}"
+                        // Explicitly log in using the fixed DOCKER_PATH
+                        sh "echo \$DOCKER_PASSWORD | \"${DOCKER_PATH}\" login -u \$DOCKER_USER --password-stdin ${DOCKER_REGISTRY}"
                         
                         // Explicitly push the built image
-                        sh "docker push ${fullImageName}"
+                        sh "\"${DOCKER_PATH}\" push ${fullImageName}"
                         
                         // Logout 
-                        sh "docker logout ${DOCKER_REGISTRY}"
+                        sh "\"${DOCKER_PATH}\" logout ${DOCKER_REGISTRY}"
                     }
                     echo "Docker push command executed successfully for: ${fullImageName}"
                 }
