@@ -5,8 +5,7 @@ pipeline {
     environment {
         DOCKER_REGISTRY = 'docker.io'
         // ===============================================
-        // Ensure this is your actual Docker Hub ID
-        DOCKER_HUB_USERNAME = 'anonymone' 
+        DOCKER_HUB_USERNAME = 'anonymone/imt2023612' 
         // ===============================================
         
         IMAGE_NAME = "calculator-cli-app" 
@@ -25,25 +24,35 @@ pipeline {
         
         stage('Compile Code') {
             steps {
-                echo 'Compiling the Simple Calculator application (using javac).'
-                // The single source file is compiled directly.
-                // The compiled .class file is created in the workspace root.
-                sh 'javac CalculatorApp.java' 
-                echo 'Compilation successful. Proceeding to Docker stage.'
+                echo 'Compiling the Simple Calculator application and test file (using javac).'
+                // CRITICAL FIX: Must compile both the application and the test file
+                sh 'javac CalculatorApp.java CalculatorTest.java' 
+                echo 'Compilation successful. Proceeding to Testing stage.'
+            }
+        }
+
+        stage('Test Code') {
+            steps {
+                echo 'Running functional tests. The pipeline will stop if tests fail (non-zero exit code).'
+                // CRITICAL FIX: Running the test class. If tests fail (exit code 1), the build fails here.
+                sh 'java CalculatorTest'
+                echo 'Tests ran successfully. Proceeding to Docker stage.'
             }
         }
         
         stage('Create & Push Docker Image') {
-            // This stage runs only if the Compile Code stage was successful
+            // This stage runs only if the Test Code stage was successful (i.e., currentBuild.result is SUCCESS)
             when {
                 expression { currentBuild.result == 'SUCCESS' }
             }
             steps {
                 script {
-                    def fullImageName = "${DOCKER_HUB_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG}"
+                    // fullImageName combines the repo path and the tag
+                    def fullImageName = "${DOCKER_HUB_USERNAME}:${IMAGE_TAG}"
                     
                     // 1. Create the Docker Image using the Dockerfile
                     echo "Building Docker image: ${fullImageName}"
+                    // The '.' at the end specifies that the Dockerfile is in the current directory
                     docker.build(fullImageName, '.')
                     
                     // 2. Push the Docker Image to Docker Hub
@@ -66,7 +75,7 @@ pipeline {
             cleanWs()
         }
         success {
-            echo "Pipeline succeeded! Image ${IMAGE_NAME}:${IMAGE_TAG} pushed to Docker Hub."
+            echo "Pipeline succeeded! Image ${DOCKER_HUB_USERNAME}:${IMAGE_TAG} pushed to Docker Hub."
         }
         failure {
             echo "Pipeline FAILED. Please check the Console Output for errors."
