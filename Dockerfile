@@ -1,22 +1,19 @@
 # --- Build Stage: Compile the Java code ---
-FROM openjdk:17 AS builder
+FROM eclipse-temurin:17-jdk AS builder
+
+WORKDIR /app
 
 # Copy Java source files
 COPY CalculatorApp.java CalculatorTest.java /app/
 
-# Set working directory
-WORKDIR /app
-
-# Compile the application
+# Compile Java sources
 RUN javac CalculatorApp.java CalculatorTest.java
 
-# --- Runtime Stage: Create final lightweight image ---
-FROM openjdk:17-jdk-slim
+# --- Runtime Stage: Lightweight Image ---
+FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
-# Copy compiled class files from builder stage
 COPY --from=builder /app/*.class /app/
 
-# Specify default command
 CMD ["java", "CalculatorApp"]
