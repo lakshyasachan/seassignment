@@ -4,9 +4,6 @@ pipeline {
     
     // Environment variables for Docker build/push
     environment {
-        // --- !!! THE FIXED DOCKER.EXE PATH FOR WINDOWS !!! ---
-        DOCKER_PATH = 'C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe' 
-        // ------------------------------------------------------------
         
         DOCKER_REGISTRY = 'docker.io'
         DOCKER_HUB_USERNAME = 'anonymone/imt2023612' 
