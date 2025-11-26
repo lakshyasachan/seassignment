@@ -14,7 +14,7 @@ pipeline {
         DOCKER_HUB_USERNAME = 'anonymone/imt2023612' 
         IMAGE_TAG = "0" 
         // Using the credential ID established in the conversation
-        DOCKER_CREDENTIAL_ID = 'dockerhub-creds' 
+        DOCKER_CREDENTIAL_ID = 'docker_lakshya' 
     }
 
     stages {
